@@ -34,7 +34,6 @@ def train_knn(X_train, y_train, X_test, y_test):
     return knn_classifier, accuracy
 
 # Function to train and evaluate a linear regression model
-# Since Linear Regression is not for classification, we use it here for demonstration only
 def train_linear_regression(iris):
     X = iris.data[:, :1]  # Use only the first feature, sepal length
     y = iris.target

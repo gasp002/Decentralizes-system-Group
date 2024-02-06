@@ -54,7 +54,7 @@ def train_linear_regression(iris):
     # Save the trained model
     joblib.dump(model, 'iris_logistic_regression_model_one_feature.joblib')
 
-    return lr_model, accuracy
+    return model, accuracy
 
 # Train and store the models and their accuracies
 dt_model, dt_accuracy = train_decision_tree(X_train, y_train, X_test, y_test)

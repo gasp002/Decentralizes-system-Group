@@ -46,3 +46,5 @@ def decision_tree(X, y):
     plt.figure(figsize=(20,10))
     plot_tree(dt_classifier, filled=True, feature_names=iris.feature_names, class_names=iris.target_names)
     plt.show()
+
+app.run(host="0.0.0.0")

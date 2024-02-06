@@ -16,27 +16,41 @@ y = iris.target
 # Split dataset into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Function to create and train a decision tree model
-def train_decision_tree(X_train, y_train, random_state=42):
-    dt_classifier = DecisionTreeClassifier(random_state=random_state)
+# Function to train and evaluate a decision tree model
+def train_decision_tree(X_train, y_train, X_test, y_test):
+    dt_classifier = DecisionTreeClassifier(random_state=42)
     dt_classifier.fit(X_train, y_train)
-    return dt_classifier
+    y_pred = dt_classifier.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    return dt_classifier, accuracy
 
-# Train the decision tree model
-dt_model = train_decision_tree(X_train, y_train)
-
-# You can add similar functions for KNN, Linear Regression, etc.
-# For example, for KNN:
-def train_knn(X_train, y_train, n_neighbors=3):
-    knn_classifier = KNeighborsClassifier(n_neighbors=n_neighbors)
+# Function to train and evaluate a KNN model
+def train_knn(X_train, y_train, X_test, y_test):
+    knn_classifier = KNeighborsClassifier(n_neighbors=3)
     knn_classifier.fit(X_train, y_train)
-    return knn_classifier
+    y_pred = knn_classifier.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    return knn_classifier, accuracy
 
-# And for Linear Regression (note: not typically used for classification like Iris dataset):
-def train_linear_regression(X_train, y_train):
+# Function to train and evaluate a linear regression model
+# Since Linear Regression is not for classification, we use it here for demonstration only
+def train_linear_regression(X_train, y_train, X_test, y_test):
     lr_model = LinearRegression()
     lr_model.fit(X_train, y_train)
-    return lr_model
+    y_pred = lr_model.predict(X_test)
+    # Placeholder: Linear regression accuracy not applicable, you'd normally use a regression metric
+    return lr_model, 'N/A'
+
+# Train and store the models and their accuracies
+dt_model, dt_accuracy = train_decision_tree(X_train, y_train, X_test, y_test)
+knn_model, knn_accuracy = train_knn(X_train, y_train, X_test, y_test)
+lr_model, lr_accuracy = train_linear_regression(X_train, y_train, X_test, y_test)
+
+models_accuracy = {
+    'Decision Tree': dt_accuracy,
+    'KNN': knn_accuracy,
+    'Linear Regression': lr_accuracy  # Placeholder for an appropriate regression metric
+}
 
 @app.route('/')
 def hello_world():
@@ -59,11 +73,17 @@ def predict():
 
     # Standard API response
     response = {
-        'prediction': predicted_class
-        # You can add more fields to the response as needed
+        'prediction': predicted_class,
+        'model': 'Decision Tree',
+        'accuracy': dt_accuracy
     }
 
     return jsonify(response)
+
+@app.route('/model_accuracies', methods=['GET'])
+def model_accuracies():
+    # API endpoint to provide accuracies of all models
+    return jsonify(models_accuracy)
 
 # Uncomment the following line to run the Flask app if you're running this script outside this environment
 # app.run(host="0.0.0.0", debug=True)

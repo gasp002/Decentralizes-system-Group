@@ -2,9 +2,10 @@ from flask import Flask, request, jsonify
 from sklearn.datasets import load_iris
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+import joblib
 
 app = Flask(__name__)
 
@@ -33,13 +34,27 @@ def train_knn(X_train, y_train, X_test, y_test):
     return knn_classifier, accuracy
 
 # Function to train and evaluate a linear regression model
-# Since Linear Regression is not for classification, we use it here for demonstration only
-def train_linear_regression(X_train, y_train, X_test, y_test):
-    lr_model = LinearRegression()
-    lr_model.fit(X_train, y_train)
-    y_pred = lr_model.predict(X_test)
-    # Placeholder: Linear regression accuracy not applicable, you'd normally use a regression metric
-    return lr_model, 'N/A'
+def train_linear_regression(iris):
+    X = iris.data[:, :1]  # Use only the first feature, sepal length
+    y = iris.target
+
+    # Split dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Initialize and train the Logistic Regression model
+    model = LogisticRegression(max_iter=200)  # Increase max_iter if needed
+    model.fit(X_train, y_train)
+
+    # Predictions on the test set
+    y_pred = model.predict(X_test)
+
+    # Calculate the accuracy score
+    accuracy = accuracy_score(y_test, y_pred)
+
+    # Save the trained model
+    joblib.dump(model, 'iris_logistic_regression_model_one_feature.joblib')
+
+    return lr_model, accuracy
 
 # Train and store the models and their accuracies
 dt_model, dt_accuracy = train_decision_tree(X_train, y_train, X_test, y_test)

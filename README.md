@@ -4,6 +4,7 @@ prediction models
 
 decison tree : lily
 knn  gaspard : 
+Random forest : Romain
 
 Antoine:Linear Regression
 

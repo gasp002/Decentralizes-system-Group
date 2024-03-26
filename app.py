@@ -66,11 +66,12 @@ dt_model, dt_accuracy = train_decision_tree(X_train, y_train, X_test, y_test)
 knn_model, knn_accuracy = train_knn(iris)
 lr_model, lr_accuracy = train_linear_regression(iris)
 
-# Dictionary to store models and their accuracies for easy reference
+# Dictionary to store models, their accuracies, initial deposit, and weights
+# instead of complex calculationb for weight we just link it to the model's accuracy
 models = {
-    'Decision Tree': {'model': dt_model, 'accuracy': dt_accuracy},
-    'KNN': {'model': knn_model, 'accuracy': knn_accuracy},
-    'Logistic Regression': {'model': lr_model, 'accuracy': lr_accuracy}
+    'Decision Tree': {'model': dt_model, 'accuracy': dt_accuracy, 'deposit': 1000, 'weight': dt_accuracy},
+    'KNN': {'model': knn_model, 'accuracy': knn_accuracy, 'deposit': 1000, 'weight': knn_accuracy},
+    'Logistic Regression': {'model': lr_model, 'accuracy': lr_accuracy, 'deposit': 1000, 'weight': lr_accuracy}
 }
 
 @app.route('/')
@@ -88,27 +89,45 @@ def predict():
     except (TypeError, ValueError):
         return jsonify({'error': 'Invalid input parameters'}), 400
     
-    # Aggregate predictions from all models
     features = [sepal_length, sepal_width, petal_length, petal_width]
+    single_feature = [sepal_length]  # We used the sepal_length for training
     predictions = []
     for model_name, model_info in models.items():
-        if model_name == 'Logistic Regression' or model_name == 'KNN':
-            # For Logistic Regression and KNN, use only the first feature
-            predicted_class_index = model_info['model'].predict([[sepal_length]])[0]
+        if model_name in ['Logistic Regression', 'KNN']:
+            # For Logistic Regression and KNN, we use only the first feature for less than perfect accuracy
+            predicted_class_index = model_info['model'].predict([single_feature])[0]
         else:
-            # For the Decision Tree model, use all features
+            # For the Decision Tree model, we use all features for perfect accuracy
             predicted_class_index = model_info['model'].predict([features])[0]
         predictions.append(iris.target_names[predicted_class_index])
-
     
-    # Determine consensus prediction
     consensus_prediction = max(set(predictions), key=predictions.count)
 
-    # Standard API response with consensus
+    # Implement the slashing mechanism
+    for model_name, model_info in models.items():
+        # Make prediction using the current model
+        if model_name in ['Logistic Regression', 'KNN']:
+            predicted_class_index = model_info['model'].predict([[sepal_length]])[0]
+        else:
+            predicted_class_index = model_info['model'].predict([features])[0]
+        model_prediction = iris.target_names[predicted_class_index]
+        
+        # Check if the model's prediction matches the consensus
+        if model_prediction != consensus_prediction:
+            # Slash the model's balance if its prediction differs from the consensus
+            slash_amount = 100  # Define the amount to be slashed
+            model_info['deposit'] -= slash_amount
+            # Ensure the deposit does not become negative
+            model_info['deposit'] = max(model_info['deposit'], 0)
+
+    # Updated part of the response to include the new balances
     response = {
         'consensus_prediction': consensus_prediction,
         'individual_predictions': predictions,
-        'models_accuracy': {model: info['accuracy'] for model, info in models.items()}
+        'models_info': {model: {'accuracy': info['accuracy'], 
+                                'deposit': info['deposit'], 
+                                'weight': info['weight']} 
+                        for model, info in models.items()}
     }
 
     return jsonify(response)

@@ -1,5 +1,9 @@
 # Important note
 Only contributors are considered as part of our team
+Antoine ESPIEUX
+Gaspard LUCIEN
+Lily LA MORELLA
+Romain GIRAUD
 
 # Evaluating models accuracies
 curl "http://localhost:5000/model_accuracies"

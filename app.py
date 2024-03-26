@@ -26,7 +26,12 @@ def train_decision_tree(X_train, y_train, X_test, y_test):
     return dt_classifier, accuracy
 
 # Function to train and evaluate a KNN model
-def train_knn(X_train, y_train, X_test, y_test):
+def train_knn(iris):
+    X = iris.data[:, :1]  # Use only the first feature, sepal length to make the model accuracy less than 1
+    y = iris.target
+    # Split dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
     knn_classifier = KNeighborsClassifier(n_neighbors=3)
     knn_classifier.fit(X_train, y_train)
     y_pred = knn_classifier.predict(X_test)
@@ -58,13 +63,14 @@ def train_linear_regression(iris):
 
 # Train and store the models and their accuracies
 dt_model, dt_accuracy = train_decision_tree(X_train, y_train, X_test, y_test)
-knn_model, knn_accuracy = train_knn(X_train, y_train, X_test, y_test)
-lr_model, lr_accuracy = train_linear_regression(X_train, y_train, X_test, y_test)
+knn_model, knn_accuracy = train_knn(iris)
+lr_model, lr_accuracy = train_linear_regression(iris)
 
-models_accuracy = {
-    'Decision Tree': dt_accuracy,
-    'KNN': knn_accuracy,
-    'Linear Regression': lr_accuracy  # Placeholder for an appropriate regression metric
+# Dictionary to store models and their accuracies for easy reference
+models = {
+    'Decision Tree': {'model': dt_model, 'accuracy': dt_accuracy},
+    'KNN': {'model': knn_model, 'accuracy': knn_accuracy},
+    'Logistic Regression': {'model': lr_model, 'accuracy': lr_accuracy}
 }
 
 @app.route('/')
@@ -81,16 +87,28 @@ def predict():
         petal_width = float(request.args.get('petal_width'))
     except (TypeError, ValueError):
         return jsonify({'error': 'Invalid input parameters'}), 400
-
-    # Make prediction using the decision tree model
+    
+    # Aggregate predictions from all models
     features = [sepal_length, sepal_width, petal_length, petal_width]
-    predicted_class = iris.target_names[dt_model.predict([features])[0]]
+    predictions = []
+    for model_name, model_info in models.items():
+        if model_name == 'Logistic Regression' or model_name == 'KNN':
+            # For Logistic Regression and KNN, use only the first feature
+            predicted_class_index = model_info['model'].predict([[sepal_length]])[0]
+        else:
+            # For the Decision Tree model, use all features
+            predicted_class_index = model_info['model'].predict([features])[0]
+        predictions.append(iris.target_names[predicted_class_index])
 
-    # Standard API response
+    
+    # Determine consensus prediction
+    consensus_prediction = max(set(predictions), key=predictions.count)
+
+    # Standard API response with consensus
     response = {
-        'prediction': predicted_class,
-        'model': 'Decision Tree',
-        'accuracy': dt_accuracy
+        'consensus_prediction': consensus_prediction,
+        'individual_predictions': predictions,
+        'models_accuracy': {model: info['accuracy'] for model, info in models.items()}
     }
 
     return jsonify(response)
@@ -98,7 +116,7 @@ def predict():
 @app.route('/model_accuracies', methods=['GET'])
 def model_accuracies():
     # API endpoint to provide accuracies of all models
-    return jsonify(models_accuracy)
+    return jsonify({model: info['accuracy'] for model, info in models.items()})
 
-# Uncomment the following line to run the Flask app if you're running this script outside this environment
-# app.run(host="0.0.0.0", debug=True)
+# Run the Flask app
+app.run(host="0.0.0.0", debug=True)

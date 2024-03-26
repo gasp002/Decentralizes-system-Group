@@ -1,3 +1,6 @@
+# Important note
+Only contributors are considered as part of our team
+
 # Evaluating models accuracies
 curl "http://localhost:5000/model_accuracies"
 
